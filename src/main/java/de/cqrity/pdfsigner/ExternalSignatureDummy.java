@@ -1,24 +1,34 @@
 package de.cqrity.pdfsigner;
 
+import org.bouncycastle.asn1.ASN1EncodableVector;
+import org.bouncycastle.asn1.DEROctetString;
+import org.bouncycastle.asn1.DERSet;
+import org.bouncycastle.asn1.cms.Attribute;
+import org.bouncycastle.asn1.cms.AttributeTable;
+import org.bouncycastle.asn1.cms.CMSAttributes;
+import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.cert.jcajce.JcaCertStore;
-import org.bouncycastle.cms.CMSException;
-import org.bouncycastle.cms.CMSSignedData;
-import org.bouncycastle.cms.CMSSignedDataGenerator;
+import org.bouncycastle.cert.jcajce.JcaX509CertificateHolder;
+import org.bouncycastle.cms.*;
 import org.bouncycastle.cms.jcajce.JcaSignerInfoGeneratorBuilder;
+import org.bouncycastle.crypto.util.PrivateKeyFactory;
 import org.bouncycastle.operator.ContentSigner;
+import org.bouncycastle.operator.DefaultDigestAlgorithmIdentifierFinder;
+import org.bouncycastle.operator.DefaultSignatureAlgorithmIdentifierFinder;
 import org.bouncycastle.operator.OperatorCreationException;
+import org.bouncycastle.operator.bc.BcDigestCalculatorProvider;
+import org.bouncycastle.operator.bc.BcRSAContentSignerBuilder;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 import org.bouncycastle.operator.jcajce.JcaDigestCalculatorProviderBuilder;
 
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.security.*;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
+import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
+import java.util.List;
 
 public class ExternalSignatureDummy {
 
@@ -64,39 +74,55 @@ public class ExternalSignatureDummy {
         return keyStore.aliases().nextElement();
     }
 
-    /**
-     * SignatureInterface sample implementation.
-     *<p>
-     * This method will be called from inside of the pdfbox and create the PKCS #7 signature.
-     * The given InputStream contains the bytes that are given by the byte range.
-     *<p>
-     * This method is for internal use only.
-     *<p>
-     * Use your favorite cryptographic library to implement PKCS #7 signature creation.
-     * If you want to create the hash and the signature separately (e.g. to transfer only the hash
-     * to an external application), read <a href="https://stackoverflow.com/questions/41767351">this
-     * answer</a> or <a href="https://stackoverflow.com/questions/56867465">this answer</a>.
-     *
-     * @throws IOException
-     */
-
-    public byte[] sign(InputStream content) throws IOException
-    {
-        // cannot be done private (interface)
-        try
-        {
+    public byte[] signByDocument(InputStream content) throws IOException {
+        try {
             CMSSignedDataGenerator gen = new CMSSignedDataGenerator();
             X509Certificate cert = (X509Certificate) certificateChain[0];
-            ContentSigner sha1Signer = new JcaContentSignerBuilder("SHA256WithRSA").build(privateKey);
-            gen.addSignerInfoGenerator(new JcaSignerInfoGeneratorBuilder(new JcaDigestCalculatorProviderBuilder().build()).build(sha1Signer, cert));
+            ContentSigner sha256Signer = new JcaContentSignerBuilder("SHA256WithRSA").build(privateKey);
+            gen.addSignerInfoGenerator(new JcaSignerInfoGeneratorBuilder(new JcaDigestCalculatorProviderBuilder().build()).build(sha256Signer, cert));
             gen.addCertificates(new JcaCertStore(Arrays.asList(certificateChain)));
             CMSProcessableInputStream msg = new CMSProcessableInputStream(content);
             CMSSignedData signedData = gen.generate(msg, false);
             return signedData.getEncoded();
-        }
-        catch (GeneralSecurityException | CMSException | OperatorCreationException e)
-        {
+        } catch (GeneralSecurityException | CMSException | OperatorCreationException e) {
             throw new IOException(e);
         }
+    }
+
+    public byte[] signByHash(byte[] hash)
+            throws IOException {
+        try {
+            List<Certificate> certList = Arrays.asList(certificateChain);
+            JcaCertStore certs = new JcaCertStore(certList);
+
+            CMSSignedDataGenerator gen = new CMSSignedDataGenerator();
+
+            Attribute attr = new Attribute(CMSAttributes.messageDigest, new DERSet(new DEROctetString(hash)));
+            ASN1EncodableVector v = new ASN1EncodableVector();
+            v.add(attr);
+
+            SignerInfoGeneratorBuilder builder = new SignerInfoGeneratorBuilder(new BcDigestCalculatorProvider());
+            builder.setSignedAttributeGenerator(new DefaultAuthenticatedAttributeTableGenerator(new AttributeTable(v)));
+
+            AlgorithmIdentifier sha256withRSA = new DefaultSignatureAlgorithmIdentifierFinder().find("SHA256withRSA");
+
+            CertificateFactory certFactory = CertificateFactory.getInstance("X.509");
+            InputStream in = new ByteArrayInputStream(certificateChain[0].getEncoded());
+            X509Certificate cert = (X509Certificate) certFactory.generateCertificate(in);
+
+            gen.addSignerInfoGenerator(builder.build(
+                    new BcRSAContentSignerBuilder(sha256withRSA,
+                            new DefaultDigestAlgorithmIdentifierFinder().find(sha256withRSA))
+                            .build(PrivateKeyFactory.createKey(privateKey.getEncoded())),
+                    new JcaX509CertificateHolder(cert)));
+
+            gen.addCertificates(certs);
+
+            CMSSignedData s = gen.generate(new CMSAbsentContent(), false);
+            return s.getEncoded();
+        } catch (GeneralSecurityException | CMSException | OperatorCreationException e) {
+            throw new IOException(e);
+        }
+
     }
 }
