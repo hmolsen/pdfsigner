@@ -78,6 +78,7 @@ public class ExternalSignatureDummy {
         try {
             CMSSignedDataGenerator gen = new CMSSignedDataGenerator();
             X509Certificate cert = (X509Certificate) certificateChain[0];
+
             ContentSigner sha256Signer = new JcaContentSignerBuilder("SHA256WithRSA").build(privateKey);
             gen.addSignerInfoGenerator(new JcaSignerInfoGeneratorBuilder(new JcaDigestCalculatorProviderBuilder().build()).build(sha256Signer, cert));
             gen.addCertificates(new JcaCertStore(Arrays.asList(certificateChain)));
@@ -92,34 +93,21 @@ public class ExternalSignatureDummy {
     public byte[] signByHash(byte[] hash)
             throws IOException {
         try {
-            List<Certificate> certList = Arrays.asList(certificateChain);
-            JcaCertStore certs = new JcaCertStore(certList);
-
             CMSSignedDataGenerator gen = new CMSSignedDataGenerator();
+            X509Certificate cert = (X509Certificate) certificateChain[0];
 
             Attribute attr = new Attribute(CMSAttributes.messageDigest, new DERSet(new DEROctetString(hash)));
             ASN1EncodableVector v = new ASN1EncodableVector();
             v.add(attr);
 
-            SignerInfoGeneratorBuilder builder = new SignerInfoGeneratorBuilder(new BcDigestCalculatorProvider());
-            builder.setSignedAttributeGenerator(new DefaultAuthenticatedAttributeTableGenerator(new AttributeTable(v)));
+            SignerInfoGeneratorBuilder builder = new SignerInfoGeneratorBuilder(new BcDigestCalculatorProvider())
+                    .setSignedAttributeGenerator(new DefaultSignedAttributeTableGenerator(new AttributeTable(v)));
 
-            AlgorithmIdentifier sha256withRSA = new DefaultSignatureAlgorithmIdentifierFinder().find("SHA256withRSA");
-
-            CertificateFactory certFactory = CertificateFactory.getInstance("X.509");
-            InputStream in = new ByteArrayInputStream(certificateChain[0].getEncoded());
-            X509Certificate cert = (X509Certificate) certFactory.generateCertificate(in);
-
-            gen.addSignerInfoGenerator(builder.build(
-                    new BcRSAContentSignerBuilder(sha256withRSA,
-                            new DefaultDigestAlgorithmIdentifierFinder().find(sha256withRSA))
-                            .build(PrivateKeyFactory.createKey(privateKey.getEncoded())),
-                    new JcaX509CertificateHolder(cert)));
-
-            gen.addCertificates(certs);
-
-            CMSSignedData s = gen.generate(new CMSAbsentContent(), false);
-            return s.getEncoded();
+            ContentSigner sha256Signer = new JcaContentSignerBuilder("SHA256WithRSA").build(privateKey);
+            gen.addSignerInfoGenerator(builder.build(sha256Signer, new JcaX509CertificateHolder(cert)));
+            gen.addCertificates(new JcaCertStore(Arrays.asList(certificateChain)));
+            CMSSignedData signedData = gen.generate(new CMSAbsentContent(), false);
+            return signedData.getEncoded();
         } catch (GeneralSecurityException | CMSException | OperatorCreationException e) {
             throw new IOException(e);
         }
