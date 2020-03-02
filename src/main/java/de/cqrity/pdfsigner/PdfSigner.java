@@ -45,7 +45,7 @@ public class PdfSigner {
         ExternalSigningSupport externalSigningSupport = doc.saveIncrementalForExternalSigning(out);
         ExternalSignatureDummy signatureDummy = new ExternalSignatureDummy();
 
-        InputStream contentStream = externalSigningSupport.getContent();
+        //InputStream contentStream = externalSigningSupport.getContent();
 
         Security.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider());
         MessageDigest md = MessageDigest.getInstance("SHA256", "BC");
