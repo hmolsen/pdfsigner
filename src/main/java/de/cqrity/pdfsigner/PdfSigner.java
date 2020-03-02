@@ -22,7 +22,7 @@ public class PdfSigner {
         signature.setReason("Testing setReason");
         signature.setSignDate(Calendar.getInstance());
 
-        doc.addSignature(signature);;
+        doc.addSignature(signature);
         ExternalSigningSupport externalSigningSupport = doc.saveIncrementalForExternalSigning(out);
         ExternalSignatureDummy signatureDummy = new ExternalSignatureDummy();
 
@@ -30,7 +30,7 @@ public class PdfSigner {
         externalSigningSupport.setSignature(cmsSignature);
     }
 
-    public void signDocumentByHash(File in, FileOutputStream out) throws IOException, NoSuchProviderException, NoSuchAlgorithmException, SignatureException, InvalidKeyException {
+    public void signDocumentByHash(File in, FileOutputStream out) throws IOException, NoSuchProviderException, NoSuchAlgorithmException {
         PDDocument doc = PDDocument.load(in);
 
         PDSignature signature = new PDSignature();
@@ -41,15 +41,15 @@ public class PdfSigner {
         signature.setReason("Testing setReason");
         signature.setSignDate(Calendar.getInstance());
 
-        doc.addSignature(signature);;
+        doc.addSignature(signature);
         ExternalSigningSupport externalSigningSupport = doc.saveIncrementalForExternalSigning(out);
         ExternalSignatureDummy signatureDummy = new ExternalSignatureDummy();
 
-        //InputStream contentStream = externalSigningSupport.getContent();
+        InputStream contentStream = externalSigningSupport.getContent();
 
         Security.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider());
         MessageDigest md = MessageDigest.getInstance("SHA256", "BC");
-        byte[] digest = md.digest(IOUtils.toByteArray(new FileInputStream(in)));
+        byte[] digest = md.digest(IOUtils.toByteArray(contentStream));
 
         byte[] cmsSignature = signatureDummy.signByHash(digest);
         externalSigningSupport.setSignature(cmsSignature);
