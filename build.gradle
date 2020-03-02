@@ -1,0 +1,25 @@
+plugins {
+    id 'java'
+}
+
+group 'de.cqrity'
+version '1.0-SNAPSHOT'
+
+sourceCompatibility = 1.8
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    testCompile 'junit:junit:4.12'
+    testCompile 'org.bouncycastle:bcprov-jdk15on:1.64'
+    testCompile 'org.bouncycastle:bcpkix-jdk15on:1.64'
+    testCompile 'org.apache.pdfbox:pdfbox:2.0.19'
+
+    compile 'junit:junit:4.12'
+    compile 'org.bouncycastle:bcprov-jdk15on:1.64'
+    compile 'org.bouncycastle:bcpkix-jdk15on:1.64'
+    compile 'org.apache.pdfbox:pdfbox:2.0.19'
+
+}
