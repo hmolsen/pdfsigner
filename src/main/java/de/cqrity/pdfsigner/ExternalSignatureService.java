@@ -17,6 +17,7 @@ import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 import org.bouncycastle.operator.jcajce.JcaDigestCalculatorProviderBuilder;
 
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.*;
@@ -54,15 +55,12 @@ public class ExternalSignatureService {
     private PrivateKey privateKey;
     private Certificate[] certificateChain;
 
-    public ExternalSignatureService() {
-        try {
-            keyStore = KeyStore.getInstance("PKCS12");
-            keyStore.load(new FileInputStream("hannes.p12"), PASSWORD);
-            privateKey = (PrivateKey) keyStore.getKey(ALIAS, PASSWORD);
-            certificateChain = keyStore.getCertificateChain(ALIAS);
-        } catch (KeyStoreException | CertificateException | NoSuchAlgorithmException | IOException | UnrecoverableKeyException e) {
-            e.printStackTrace();
-        }
+    public ExternalSignatureService() throws KeyStoreException, IOException, UnrecoverableKeyException, NoSuchAlgorithmException, CertificateException {
+        keyStore = KeyStore.getInstance("PKCS12");
+        keyStore.load(new FileInputStream("hannes.p12"), PASSWORD);
+        privateKey = (PrivateKey) keyStore.getKey(ALIAS, PASSWORD);
+        certificateChain = keyStore.getCertificateChain(ALIAS);
+
     }
 
     public String getKeyOwner() throws KeyStoreException {
