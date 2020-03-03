@@ -52,14 +52,22 @@ public class ExternalSignatureService {
     public static final char[] PASSWORD = "123456".toCharArray();
 
     private KeyStore keyStore;
-    private PrivateKey privateKey;
     private Certificate[] certificateChain;
+    private final CMSSignedDataGenerator gen;
+    private X509Certificate signerCert;
+    private ContentSigner sha256Signer;
 
-    public ExternalSignatureService() throws KeyStoreException, IOException, UnrecoverableKeyException, NoSuchAlgorithmException, CertificateException {
+    public ExternalSignatureService() throws KeyStoreException, IOException, UnrecoverableKeyException, NoSuchAlgorithmException, CertificateException, OperatorCreationException, CMSException {
         keyStore = KeyStore.getInstance("PKCS12");
         keyStore.load(new FileInputStream("hannes.p12"), PASSWORD);
-        privateKey = (PrivateKey) keyStore.getKey(ALIAS, PASSWORD);
+        PrivateKey privateKey = (PrivateKey) keyStore.getKey(ALIAS, PASSWORD);
         certificateChain = keyStore.getCertificateChain(ALIAS);
+        signerCert = (X509Certificate) certificateChain[0];
+
+        sha256Signer = new JcaContentSignerBuilder("SHA256WithRSA").build(privateKey);
+
+        gen =  new CMSSignedDataGenerator();
+        gen.addCertificates(new JcaCertStore(Arrays.asList(certificateChain)));
 
     }
 
@@ -68,22 +76,15 @@ public class ExternalSignatureService {
     }
 
     public byte[] signByPdfContent(InputStream content) throws IOException, CertificateEncodingException, CMSException, OperatorCreationException {
-        CMSSignedDataGenerator gen = new CMSSignedDataGenerator();
-        X509Certificate cert = (X509Certificate) certificateChain[0];
-
-        ContentSigner sha256Signer = new JcaContentSignerBuilder("SHA256WithRSA").build(privateKey);
-        gen.addSignerInfoGenerator(new JcaSignerInfoGeneratorBuilder(new JcaDigestCalculatorProviderBuilder().build()).build(sha256Signer, cert));
+        gen.addSignerInfoGenerator(new JcaSignerInfoGeneratorBuilder(new JcaDigestCalculatorProviderBuilder().build()).build(sha256Signer, signerCert));
         gen.addCertificates(new JcaCertStore(Arrays.asList(certificateChain)));
         CMSProcessableInputStream msg = new CMSProcessableInputStream(content);
+
         CMSSignedData signedData = gen.generate(msg, false);
         return signedData.getEncoded();
     }
 
     public byte[] signByPdfContentDigest(byte[] hash) throws IOException, CertificateEncodingException, OperatorCreationException, CMSException {
-        System.out.println("Hash of the Document is: " + bytesToHex(hash));
-        CMSSignedDataGenerator gen = new CMSSignedDataGenerator();
-        X509Certificate cert = (X509Certificate) certificateChain[0];
-
         Attribute attr = new Attribute(CMSAttributes.messageDigest, new DERSet(new DEROctetString(hash)));
         ASN1EncodableVector v = new ASN1EncodableVector();
         v.add(attr);
@@ -91,22 +92,10 @@ public class ExternalSignatureService {
         SignerInfoGeneratorBuilder builder = new SignerInfoGeneratorBuilder(new BcDigestCalculatorProvider())
                 .setSignedAttributeGenerator(new DefaultSignedAttributeTableGenerator(new AttributeTable(v)));
 
-        ContentSigner sha256Signer = new JcaContentSignerBuilder("SHA256WithRSA").build(privateKey);
-        gen.addSignerInfoGenerator(builder.build(sha256Signer, new JcaX509CertificateHolder(cert)));
-        gen.addCertificates(new JcaCertStore(Arrays.asList(certificateChain)));
+        gen.addSignerInfoGenerator(builder.build(sha256Signer, new JcaX509CertificateHolder(signerCert)));
+
         CMSSignedData signedData = gen.generate(new CMSAbsentContent(), false);
         return signedData.getEncoded();
 
-    }
-
-    private static final char[] HEX_ARRAY = "0123456789ABCDEF".toCharArray();
-    private static String bytesToHex(byte[] bytes) {
-        char[] hexChars = new char[bytes.length * 2];
-        for (int j = 0; j < bytes.length; j++) {
-            int v = bytes[j] & 0xFF;
-            hexChars[j * 2] = HEX_ARRAY[v >>> 4];
-            hexChars[j * 2 + 1] = HEX_ARRAY[v & 0x0F];
-        }
-        return new String(hexChars);
     }
 }

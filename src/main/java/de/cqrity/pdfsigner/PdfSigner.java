@@ -10,6 +10,7 @@ import org.bouncycastle.operator.OperatorCreationException;
 import java.io.*;
 import java.security.*;
 import java.security.cert.CertificateEncodingException;
+import java.security.cert.CertificateException;
 import java.util.Calendar;
 
 public class PdfSigner {
@@ -22,7 +23,7 @@ public class PdfSigner {
     private final ExternalSigningSupport externalSigningSupport;
     private ExternalSignatureService externalSignatureService = new ExternalSignatureService();
 
-    public PdfSigner(File unsignedPdfSource, File signedPdfTarget) throws IOException {
+    public PdfSigner(File unsignedPdfSource, File signedPdfTarget) throws IOException, UnrecoverableKeyException, CertificateException, NoSuchAlgorithmException, KeyStoreException, CMSException, OperatorCreationException {
         PDDocument doc = PDDocument.load(unsignedPdfSource);
         PDSignature signature = new PDSignature();
         signature.setFilter(PDSignature.FILTER_ADOBE_PPKLITE);

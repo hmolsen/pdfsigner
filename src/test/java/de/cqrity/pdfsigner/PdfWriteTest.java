@@ -31,7 +31,7 @@ public class PdfWriteTest {
     }
 
     @Test
-    public final void outputPdfSignedByDocument() throws IOException, CertificateException, CMSException, OperatorCreationException {
+    public final void outputPdfSignedByDocument() throws IOException, CertificateException, CMSException, OperatorCreationException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException {
         File signedPdfTarget = new File("testdoc_signed.pdf");
 
         PdfSigner pdfSigner = new PdfSigner(unsignedPdfSource, signedPdfTarget);
@@ -41,7 +41,7 @@ public class PdfWriteTest {
     }
 
     @Test
-    public final void outputPdfSignedByHash() throws IOException, NoSuchAlgorithmException, CertificateException, CMSException, OperatorCreationException, NoSuchProviderException {
+    public final void outputPdfSignedByHash() throws IOException, NoSuchAlgorithmException, CertificateException, CMSException, OperatorCreationException, NoSuchProviderException, UnrecoverableKeyException, KeyStoreException {
         File signedPdfTarget = new File("testdoc_signed_by_hash.pdf");
 
         PdfSigner pdfSigner = new PdfSigner(unsignedPdfSource, signedPdfTarget);
