@@ -4,9 +4,12 @@ import org.apache.pdfbox.io.IOUtils;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.interactive.digitalsignature.ExternalSigningSupport;
 import org.apache.pdfbox.pdmodel.interactive.digitalsignature.PDSignature;
+import org.bouncycastle.cms.CMSException;
+import org.bouncycastle.operator.OperatorCreationException;
 
 import java.io.*;
 import java.security.*;
+import java.security.cert.CertificateEncodingException;
 import java.util.Calendar;
 
 public class PdfSigner {
@@ -32,7 +35,7 @@ public class PdfSigner {
         externalSigningSupport = doc.saveIncrementalForExternalSigning(new FileOutputStream(signedPdfTarget));
     }
 
-    public void signDocumentByContent() throws IOException {
+    public void signDocumentByContent() throws IOException, CertificateEncodingException, OperatorCreationException, CMSException {
         InputStream pdfContentStream = externalSigningSupport.getContent();
 
         byte[] cmsSignature = externalSignatureService.signByPdfContent(pdfContentStream);
@@ -40,7 +43,7 @@ public class PdfSigner {
         externalSigningSupport.setSignature(cmsSignature);
     }
 
-    public void signDocumentByContentDigest() throws IOException, NoSuchProviderException, NoSuchAlgorithmException {
+    public void signDocumentByContentDigest() throws IOException, NoSuchProviderException, NoSuchAlgorithmException, CertificateEncodingException, OperatorCreationException, CMSException {
         InputStream pdfContentStream = externalSigningSupport.getContent();
 
         byte[] pdfContentDigest = getContentDigest(pdfContentStream);
