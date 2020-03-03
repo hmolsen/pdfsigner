@@ -68,7 +68,7 @@ public class ExternalSignatureService {
         return keyStore.aliases().nextElement();
     }
 
-    public byte[] signByDocument(InputStream content) throws IOException {
+    public byte[] signByPdfContent(InputStream content) throws IOException {
         try {
             CMSSignedDataGenerator gen = new CMSSignedDataGenerator();
             X509Certificate cert = (X509Certificate) certificateChain[0];
@@ -84,7 +84,7 @@ public class ExternalSignatureService {
         }
     }
 
-    public byte[] signByHash(byte[] hash) throws IOException {
+    public byte[] signByPdfContentDigest(byte[] hash) throws IOException {
         try {
             System.out.println("Hash of the Document is: " + bytesToHex(hash));
             CMSSignedDataGenerator gen = new CMSSignedDataGenerator();

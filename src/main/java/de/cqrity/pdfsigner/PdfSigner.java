@@ -11,49 +11,49 @@ import java.util.Calendar;
 
 public class PdfSigner {
 
-    public void signDocument(File in, FileOutputStream out) throws IOException {
-        PDDocument doc = PDDocument.load(in);
+    public static final String SIGNER_NAME = "Hannes Molsen";
+    public static final String SIGN_LOCATION = "Scharbeutz";
+    public static final String SIGN_REASON = "Testing";
+    public static final Calendar SIGN_DATE = Calendar.getInstance();
 
+    private final ExternalSigningSupport externalSigningSupport;
+    private ExternalSignatureService externalSignatureService = new ExternalSignatureService();
+
+    public PdfSigner(File unsignedPdfSource, File signedPdfTarget) throws IOException {
+        PDDocument doc = PDDocument.load(unsignedPdfSource);
         PDSignature signature = new PDSignature();
         signature.setFilter(PDSignature.FILTER_ADOBE_PPKLITE);
         signature.setSubFilter(PDSignature.SUBFILTER_ETSI_CADES_DETACHED);
-        signature.setName("Hannes Molsen setName");
-        signature.setLocation("Scharbeutz setLoc");
-        signature.setReason("Testing setReason");
-        signature.setSignDate(Calendar.getInstance());
-
+        signature.setName(SIGNER_NAME);
+        signature.setLocation(SIGN_LOCATION);
+        signature.setReason(SIGN_REASON);
+        signature.setSignDate(SIGN_DATE);
         doc.addSignature(signature);
-        ExternalSigningSupport externalSigningSupport = doc.saveIncrementalForExternalSigning(out);
-        ExternalSignatureService signatureDummy = new ExternalSignatureService();
+        externalSigningSupport = doc.saveIncrementalForExternalSigning(new FileOutputStream(signedPdfTarget));
+    }
 
-        byte[] cmsSignature = signatureDummy.signByDocument(externalSigningSupport.getContent());
+    public void signDocumentByContent() throws IOException {
+        InputStream pdfContentStream = externalSigningSupport.getContent();
+
+        byte[] cmsSignature = externalSignatureService.signByPdfContent(pdfContentStream);
+
         externalSigningSupport.setSignature(cmsSignature);
     }
 
-    public byte[] signDocumentByHash(File in, FileOutputStream out) throws IOException, NoSuchProviderException, NoSuchAlgorithmException {
-        PDDocument doc = PDDocument.load(in);
+    public void signDocumentByContentDigest() throws IOException, NoSuchProviderException, NoSuchAlgorithmException {
+        InputStream pdfContentStream = externalSigningSupport.getContent();
 
-        PDSignature signature = new PDSignature();
-        signature.setFilter(PDSignature.FILTER_ADOBE_PPKLITE);
-        signature.setSubFilter(PDSignature.SUBFILTER_ETSI_CADES_DETACHED);
-        signature.setName("Hannes Molsen setName");
-        signature.setLocation("Scharbeutz setLoc");
-        signature.setReason("Testing setReason");
-        signature.setSignDate(Calendar.getInstance());
+        byte[] pdfContentDigest = getContentDigest(pdfContentStream);
 
-        doc.addSignature(signature);
-        ExternalSigningSupport externalSigningSupport = doc.saveIncrementalForExternalSigning(out);
-        ExternalSignatureService signatureDummy = new ExternalSignatureService();
+        byte[] cmsSignature = externalSignatureService.signByPdfContentDigest(pdfContentDigest);
 
-        InputStream contentStream = externalSigningSupport.getContent();
+        externalSigningSupport.setSignature(cmsSignature);
+    }
 
+    private byte[] getContentDigest(InputStream pdfContentStream) throws NoSuchAlgorithmException, NoSuchProviderException, IOException {
         Security.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider());
         MessageDigest md = MessageDigest.getInstance("SHA256", "BC");
-        byte[] digest = md.digest(IOUtils.toByteArray(contentStream));
-
-        byte[] cmsSignature = signatureDummy.signByHash(digest);
-        externalSigningSupport.setSignature(cmsSignature);
-        return cmsSignature;
+        return md.digest(IOUtils.toByteArray(pdfContentStream));
     }
 
 

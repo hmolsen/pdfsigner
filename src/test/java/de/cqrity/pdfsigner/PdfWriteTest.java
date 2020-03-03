@@ -23,43 +23,31 @@ import java.util.List;
 
 public class PdfWriteTest {
 
-    private File in;
-    private PdfSigner pdfSigner;
+    private File unsignedPdfSource;
 
     @Before
     public void setUp() {
-        pdfSigner = new PdfSigner();
-        in = new File("testdoc.pdf");
+        unsignedPdfSource = new File("testdoc.pdf");
     }
 
     @Test
-    public final void outputPdfSignedByDocument() throws IOException {
-        File outFile = new File("testdoc_signed.pdf");
-        if (outFile.exists()) {
-            outFile.delete();
-        }
-        FileOutputStream out = new FileOutputStream(outFile);
+    public final void outputPdfSignedByDocument() throws IOException, CertificateException, CMSException, OperatorCreationException {
+        File signedPdfTarget = new File("testdoc_signed.pdf");
 
-        pdfSigner.signDocument(in, out);
+        PdfSigner pdfSigner = new PdfSigner(unsignedPdfSource, signedPdfTarget);
+        pdfSigner.signDocumentByContent();
+
+        Assert.assertTrue(signatureIsValidOfDocument(signedPdfTarget));
     }
 
     @Test
-    public final void constructPdfSignerWithKeystore_classKnowsWhoSigns() {
+    public final void outputPdfSignedByHash() throws IOException, NoSuchAlgorithmException, CertificateException, CMSException, OperatorCreationException, NoSuchProviderException {
+        File signedPdfTarget = new File("testdoc_signed_by_hash.pdf");
 
+        PdfSigner pdfSigner = new PdfSigner(unsignedPdfSource, signedPdfTarget);
+        pdfSigner.signDocumentByContentDigest();
 
-    }
-
-    @Test
-    public final void outputPdfSignedByHash() throws IOException, NoSuchAlgorithmException, NoSuchProviderException, CertificateException, CMSException, OperatorCreationException {
-        File outFile = new File("testdoc_signed_by_hash.pdf");
-        if (outFile.exists()) {
-            outFile.delete();
-        }
-        FileOutputStream out = new FileOutputStream(outFile);
-
-        byte[] cmsSignatureAsBytes = pdfSigner.signDocumentByHash(in, out);
-
-        Assert.assertTrue(signatureIsValidOfDocument(outFile));
+        Assert.assertTrue(signatureIsValidOfDocument(signedPdfTarget));
     }
 
     @SuppressWarnings("unchecked")
