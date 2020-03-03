@@ -5,11 +5,11 @@ import org.junit.Test;
 
 import java.security.KeyStoreException;
 
-public class ExternalSignatureDummyTest {
+public class ExternalSignatureServiceTest {
 
     @Test
     public final void canCreateSigner() throws KeyStoreException {
-        ExternalSignatureDummy extSig = new ExternalSignatureDummy();
+        ExternalSignatureService extSig = new ExternalSignatureService();
         Assert.assertEquals("hannes", extSig.getKeyOwner());
     }
 }

@@ -24,13 +24,13 @@ public class PdfSigner {
 
         doc.addSignature(signature);
         ExternalSigningSupport externalSigningSupport = doc.saveIncrementalForExternalSigning(out);
-        ExternalSignatureDummy signatureDummy = new ExternalSignatureDummy();
+        ExternalSignatureService signatureDummy = new ExternalSignatureService();
 
         byte[] cmsSignature = signatureDummy.signByDocument(externalSigningSupport.getContent());
         externalSigningSupport.setSignature(cmsSignature);
     }
 
-    public void signDocumentByHash(File in, FileOutputStream out) throws IOException, NoSuchProviderException, NoSuchAlgorithmException {
+    public byte[] signDocumentByHash(File in, FileOutputStream out) throws IOException, NoSuchProviderException, NoSuchAlgorithmException {
         PDDocument doc = PDDocument.load(in);
 
         PDSignature signature = new PDSignature();
@@ -43,7 +43,7 @@ public class PdfSigner {
 
         doc.addSignature(signature);
         ExternalSigningSupport externalSigningSupport = doc.saveIncrementalForExternalSigning(out);
-        ExternalSignatureDummy signatureDummy = new ExternalSignatureDummy();
+        ExternalSignatureService signatureDummy = new ExternalSignatureService();
 
         InputStream contentStream = externalSigningSupport.getContent();
 
@@ -53,6 +53,7 @@ public class PdfSigner {
 
         byte[] cmsSignature = signatureDummy.signByHash(digest);
         externalSigningSupport.setSignature(cmsSignature);
+        return cmsSignature;
     }
 
 

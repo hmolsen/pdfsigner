@@ -25,7 +25,7 @@ import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
 
-public class ExternalSignatureDummy {
+public class ExternalSignatureService {
 
     /*
     Keystore generation
@@ -48,16 +48,15 @@ public class ExternalSignatureDummy {
      */
     public static final String ALIAS = "hannes";
     public static final char[] PASSWORD = "123456".toCharArray();
-    private String keystorePath = "hannes.p12";
 
     private KeyStore keyStore;
     private PrivateKey privateKey;
     private Certificate[] certificateChain;
 
-    public ExternalSignatureDummy() {
+    public ExternalSignatureService() {
         try {
             keyStore = KeyStore.getInstance("PKCS12");
-            keyStore.load(new FileInputStream(keystorePath), PASSWORD);
+            keyStore.load(new FileInputStream("hannes.p12"), PASSWORD);
             privateKey = (PrivateKey) keyStore.getKey(ALIAS, PASSWORD);
             certificateChain = keyStore.getCertificateChain(ALIAS);
         } catch (KeyStoreException | CertificateException | NoSuchAlgorithmException | IOException | UnrecoverableKeyException e) {
