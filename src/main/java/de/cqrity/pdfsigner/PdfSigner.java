@@ -6,6 +6,7 @@ import org.apache.pdfbox.pdmodel.interactive.digitalsignature.ExternalSigningSup
 import org.apache.pdfbox.pdmodel.interactive.digitalsignature.PDSignature;
 import org.bouncycastle.cms.CMSException;
 import org.bouncycastle.operator.OperatorCreationException;
+import org.bouncycastle.util.encoders.Hex;
 
 import java.io.*;
 import java.security.*;
@@ -57,7 +58,9 @@ public class PdfSigner {
     private byte[] getContentDigest(InputStream pdfContentStream) throws NoSuchAlgorithmException, NoSuchProviderException, IOException {
         Security.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider());
         MessageDigest md = MessageDigest.getInstance("SHA256", "BC");
-        return md.digest(IOUtils.toByteArray(pdfContentStream));
+        byte[] digest = md.digest(IOUtils.toByteArray(pdfContentStream));
+        System.out.println("Hash of Document: " + Hex.toHexString(digest));
+        return digest;
     }
 
 

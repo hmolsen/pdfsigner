@@ -1,5 +1,7 @@
 package de.cqrity.pdfsigner;
 
+import org.apache.commons.codec.DecoderException;
+import org.apache.commons.codec.binary.Hex;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.interactive.digitalsignature.PDSignature;
 import org.bouncycastle.cert.X509CertificateHolder;
@@ -54,6 +56,20 @@ public class PdfWriteTest {
         pdfSigner.signDocumentByContentDigest();
 
         Assert.assertTrue(signatureIsValidOfDocument(signedPdfTarget));
+    }
+
+    @Test
+    public final void outputSignedHash() throws CertificateException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, OperatorCreationException, CMSException, IOException, DecoderException {
+        ExternalSignatureService externalSignatureService = new ExternalSignatureService();
+        String sha256HexString = "b93767383faa9efa75a3e22132c69343725429b8ce1476e9fc914f6ea80f8879";
+        byte[] sha256Bytes = Hex.decodeHex(sha256HexString);
+        byte[] signatureBytes = externalSignatureService.signByPdfContentDigest(sha256Bytes);
+        String signaturePlaceHolder = new String(new char[30000]).replace('\0', '0');
+        String signatureHexString = Hex.encodeHexString(signatureBytes);
+        String hexStringForPlaceholder = (signatureHexString + signaturePlaceHolder).substring(0,30000);
+        System.out.println("Generated a " + signatureHexString.length() + " byte long signature for " + sha256HexString);
+        System.out.println(hexStringForPlaceholder);
+        Assert.assertTrue(signatureHexString.length() < 30000);
     }
 
     @SuppressWarnings("unchecked")

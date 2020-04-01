@@ -16,6 +16,7 @@ dependencies {
     testCompile 'org.bouncycastle:bcprov-jdk15on:1.64'
     testCompile 'org.bouncycastle:bcpkix-jdk15on:1.64'
     testCompile 'org.apache.pdfbox:pdfbox:2.0.19'
+    testCompile 'commons-codec:commons-codec:1.14'
 
     compile 'junit:junit:4.12'
     compile 'org.bouncycastle:bcprov-jdk15on:1.64'
