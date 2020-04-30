@@ -59,9 +59,20 @@ public class PdfWriteTest {
     }
 
     @Test
+    public final void outputAlreadySignedPdfSignedByHash() throws IOException, NoSuchAlgorithmException, CertificateException, CMSException, OperatorCreationException, NoSuchProviderException, UnrecoverableKeyException, KeyStoreException {
+        File signedPdfSource = new File("testdoc_signed_by_hash.pdf");
+        File signedPdfTarget = new File("testdoc_signed_again_by_hash.pdf");
+
+        PdfSigner pdfSigner = new PdfSigner(signedPdfSource, signedPdfTarget);
+        pdfSigner.signDocumentByContentDigest();
+
+        Assert.assertTrue(signatureIsValidOfDocument(signedPdfTarget));
+    }
+
+    @Test
     public final void outputSignedHash() throws CertificateException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, OperatorCreationException, CMSException, IOException, DecoderException {
         ExternalSignatureService externalSignatureService = new ExternalSignatureService();
-        String sha256HexString = "b93767383faa9efa75a3e22132c69343725429b8ce1476e9fc914f6ea80f8879";
+        String sha256HexString = "3953C165571393197BF251A3309AA076DB2A63FDD6944BC910B57E83A06BE68D";
         byte[] sha256Bytes = Hex.decodeHex(sha256HexString);
         byte[] signatureBytes = externalSignatureService.signByPdfContentDigest(sha256Bytes);
         String signaturePlaceHolder = new String(new char[30000]).replace('\0', '0');
@@ -93,6 +104,9 @@ public class PdfWriteTest {
         List<PDSignature> signatures = signedDoc.getSignatureDictionaries();
 
         Assert.assertFalse(signatures.isEmpty());
+        for (PDSignature signature : signatures) {
+            signature.getFilter();
+        }
         Assert.assertEquals(1, signatures.size());
 
         PDSignature signature = signatures.get(0);
